@@ -29,5 +29,12 @@ window.APP_CONFIG = {
   // Faixas de faturamento consideradas ABAIXO de 60k (vão direto ao diagnóstico)
   BELOW_60K_RANGES: ["Até 30mil/mês", "30 a 60mil/mês", "Nada / Não tenho empresa"],
 
+  // Roteamento ILU x MDL:
+  // ILU só quando o restante vai bem (média dos outros pilares >= ILU_OTHER_MIN)
+  // e o Financeiro é o ponto fraco isolado (pelo menos ILU_FINANCE_GAP pontos abaixo).
+  // Caso contrário (problemas espalhados) -> MDL.
+  ILU_OTHER_MIN: 55,
+  ILU_FINANCE_GAP: 20,
+
   SUBMIT_TIMEOUT_MS: 20000,
 };
