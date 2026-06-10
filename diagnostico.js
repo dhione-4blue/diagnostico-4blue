@@ -99,10 +99,10 @@ const JOB_TITLES = ['Dono / Sócio','Gerente / Coordenador / Supervisor','Analis
 const REVENUE_RANGES = ['Até 30mil/mês','30 a 60mil/mês','60 a 100mil/mês','100 a 300mil/mês','300 a 500mil/mês','Acima de 500mil/mês','Nada / Não tenho empresa'];
 
 const LEVELS = {
-  1:{ name:'Fazenda de Problemas', color:'#ef4444', img:'assets/fazenda-problemas.png' },
-  2:{ name:'Pagadora de Boletos', color:'#f59e0b', img:'assets/pagadora-boletos.png' },
-  3:{ name:'Laboratório de Dinheiro', color:'#004882', img:'assets/lab-dinheiro.png' },
-  4:{ name:'Máquina de Lucros', color:'#0072CE', img:'assets/maquina-lucros.png' },
+  1:{ name:'Fazenda de Problemas', color:'#ef4444', image:'assets/fazenda-problemas.png' },
+  2:{ name:'Pagadora de Boletos', color:'#f59e0b', image:'assets/pagadora-boletos.png' },
+  3:{ name:'Laboratório de Dinheiro', color:'#004882', image:'assets/lab-dinheiro.png' },
+  4:{ name:'Máquina de Lucros', color:'#0072CE', image:'assets/maquina-lucros.png' },
 };
 
 /* =================== ESTADO =================== */
@@ -127,7 +127,8 @@ const segmentName = () => S.businessType==='other'
 /* =================== CÁLCULOS =================== */
 function calc(){
   const type = BUSINESS_TYPES.find(t=>t.id===S.businessType);
-  const idealMargin = type ? type.idealMargin : 0.15;
+  // nunca usa margem 0 (evita zerar todos os custos se o tipo ficar em "select"/desconhecido)
+  const idealMargin = (type && type.idealMargin > 0) ? type.idealMargin : 0.15;
 
   const idealProfit = S.revenue * idealMargin;
   const inefMonthly = Math.max(0, idealProfit - S.profit);
@@ -759,4 +760,4 @@ function bind(){
   fbq('init',id); fbq('track','PageView');
 })();
 
-render()
+render();
