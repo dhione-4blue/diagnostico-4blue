@@ -140,6 +140,8 @@ function calc(){
   const growthUpside  = Math.max(0, S.desiredRevenue - S.revenue) * idealMargin;
   let oppMonthly = Math.max(0, desiredProfit - S.profit);
   if (oppMonthly < growthUpside) oppMonthly = growthUpside;
+  // piso na ineficiência: a oportunidade nunca é menor que o vazamento atual
+  if (oppMonthly < inefMonthly) oppMonthly = inefMonthly;
 
   const pillarScores = PILLARS.map(p=>{
     const arr = p.questions.map(q=>S.answers[q.id]||0);
@@ -287,6 +289,21 @@ function sendToBackend(payload){
 
 function dl(event, data){ try{ (window.dataLayer=window.dataLayer||[]).push(Object.assign({event:event}, data||{})); }catch(e){} }
 
+/* =================== POPUP DE CARREGAMENTO (overlay branded) =================== */
+function delay(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function showLoader(title, msg){
+  hideLoader();
+  var d=document.createElement('div');
+  d.className='overlay'; d.id='loader-overlay';
+  d.innerHTML='<div class="ov-box">'+
+    '<div class="ov-brand">4blue</div>'+
+    '<div class="ov-ring"></div>'+
+    '<h3>'+title+'</h3><p>'+msg+'</p>'+
+    '<div class="ov-bar"><span></span></div></div>';
+  document.body.appendChild(d);
+}
+function hideLoader(){ var d=document.getElementById('loader-overlay'); if(d) d.remove(); }
+
 // Ao clicar em "Gerar Meu Diagnóstico": grava o lead (sempre) e decide o caminho
 async function finishCapture(){
   S.submitting=true; render();
@@ -297,7 +314,8 @@ async function finishCapture(){
     nivel:r.level.name, score:r.mgmtPct.toFixed(0), solucao:decideSolution(r), qualificado:isQualified() });
   if(window.fbq){ try{ fbq('track','Lead',{content_name:'Diagnostico Maquina de Lucros', value:S.revenue, currency:'BRL'}); }catch(e){} }
 
-  await sendToBackend(payload);
+  showLoader('Gerando seu diagnóstico', 'Estamos preparando algo especial para você. Só um instante...');
+  await Promise.all([ sendToBackend(payload), delay(1700) ]);
   S.submitted=true; S.submitting=false;
 
   if(isQualified()){
@@ -307,6 +325,7 @@ async function finishCapture(){
     S.resultMode='combo';
     S.step='results';
   }
+  hideLoader();
   render();
 }
 
@@ -317,13 +336,16 @@ async function raiseHand(){
   S.handraiseTag = tag;
   dl('levantada_de_mao', { solucao:S.solution, tag:tag });
   if(window.fbq){ try{ fbq('trackCustom','LevantadaDeMao',{solucao:S.solution}); }catch(e){} }
-  await sendToBackend({ action:'handraise', 'E-mail':S.lead.email, 'Nome':S.lead.name,
-    'WhatsApp':S.lead.phone, 'Tag':tag, 'Solucao':S.solution });
-  S.resultMode='handraise'; S.step='results'; toTop(); render();
+  showLoader('Perfeito, recebemos seu interesse!', 'Estamos preparando o seu diagnóstico completo...');
+  await Promise.all([ sendToBackend({ action:'handraise', 'E-mail':S.lead.email, 'Nome':S.lead.name,
+    'WhatsApp':S.lead.phone, 'Tag':tag, 'Solucao':S.solution }), delay(1700) ]);
+  S.resultMode='handraise'; S.step='results'; toTop(); hideLoader(); render();
 }
-function declineSolution(){
+async function declineSolution(){
   dl('recusou_solucao', { solucao:S.solution });
-  S.resultMode='declined'; S.step='results'; toTop(); render();
+  showLoader('Preparando seu diagnóstico', 'Montando a análise completa da sua empresa...');
+  await delay(1200);
+  S.resultMode='declined'; S.step='results'; toTop(); hideLoader(); render();
 }
 
 /* =================== INPUTS =================== */
