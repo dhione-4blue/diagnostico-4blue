@@ -124,6 +124,16 @@ const segmentName = () => S.businessType==='other'
   ? (S.businessOther.trim() || 'Outro')
   : ((BUSINESS_TYPES.find(t=>t.id===S.businessType)||{}).name||'');
 
+// mapeia o faturamento numérico (setup) para a faixa do formulário
+function revenueToRange(v){
+  if(v<=30000) return 'Até 30mil/mês';
+  if(v<=60000) return '30 a 60mil/mês';
+  if(v<=100000) return '60 a 100mil/mês';
+  if(v<=300000) return '100 a 300mil/mês';
+  if(v<=500000) return '300 a 500mil/mês';
+  return 'Acima de 500mil/mês';
+}
+
 /* =================== CÁLCULOS =================== */
 function calc(){
   const type = BUSINESS_TYPES.find(t=>t.id===S.businessType);
@@ -213,7 +223,17 @@ function baseTag(r){
   if(!isAbove60k()) return 'diagnostico-abaixo-60k';
   return r.mgmtPct < 50 ? 'diagnostico-acima-60k-qualificado' : 'diagnostico-acima-60k-avancado';
 }
-function decideSolution(r){ return insights(r).financeIsWorst ? 'ILU' : 'MDL'; }
+function decideSolution(r){
+  const finance = r.pillarScores[0].score;                 // Finanças (0-100)
+  const others = r.pillarScores.slice(1).map(p=>p.score);  // demais 6 pilares
+  const otherAvg = others.reduce((a,b)=>a+b,0)/others.length;
+  const otherMin = (CFG.ILU_OTHER_MIN!=null?CFG.ILU_OTHER_MIN:55);
+  const gap = (CFG.ILU_FINANCE_GAP!=null?CFG.ILU_FINANCE_GAP:20);
+  // ILU só quando o restante vai bem e o Financeiro é o ponto fraco isolado.
+  // Se os problemas estão espalhados (média geral baixa), vai para o MDL.
+  const iluCase = otherAvg >= otherMin && finance <= (otherAvg - gap);
+  return iluCase ? 'ILU' : 'MDL';
+}
 const HANDRAISE_TAGS = {
   ILU:'inscrito ILU lp B [PER] diagnostico de gestao',
   MDL:'inscrito MDL lp B [PER] diagnostico de gestao',
@@ -241,7 +261,8 @@ function next(){
   if(S.step==='setup') S.step='initial_eval';
   else if(S.step==='initial_eval') S.step='pillars';
   else if(S.step==='pillars'){
-    if(S.pillarIdx<PILLARS.length-1) S.pillarIdx++; else S.step='lead_capture';
+    if(S.pillarIdx<PILLARS.length-1) S.pillarIdx++;
+    else { if(!S.lead.revenueRange) S.lead.revenueRange = revenueToRange(S.revenue); S.step='lead_capture'; }
   } else if(S.step==='lead_capture'){ finishCapture(); return; }
   render();
 }
@@ -443,7 +464,6 @@ function handraiseView(){
   const r = calc();
   return `<div class="step stack">
     <div class="center">
-      <div class="ai-tag">${icon('sparkles')} Análise personalizada concluída</div>
       <h1 class="title">${firstName()?firstName()+', seu':'Seu'} resultado está pronto</h1>
     </div>
     <div class="card level-card">
@@ -454,7 +474,6 @@ function handraiseView(){
       <p class="lbl" style="margin:0">Nível ${r.level.level} de 4 • Nota geral ${r.mgmtPct.toFixed(0)}%</p>
     </div>
     <div class="ai-box">
-      <div class="ai-tag">${icon('bulb')} Leitura do diagnóstico</div>
       <p>${insights(r).lvlMsg}</p>
       <p>Mas antes de te mostrar todos os detalhes do diagnóstico, quero te apresentar a <b>solução que vai te ajudar a sair desse resultado e ir para o próximo nível</b>.</p>
     </div>
@@ -468,9 +487,7 @@ function iluView(){
   const cta = (label,extra)=>`<a class="btn btn-primary btn-lg" data-act="raise" role="button">${icon('bulb')} ${label}</a>`;
   return `<div class="step lp">
     <div class="lp-hero">
-      <span class="badge">${icon('coins')} Iluminismo Financeiro</span>
-      <p style="color:#bfe0ff;font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:13px;margin-bottom:10px">O diagnóstico é claro</p>
-      <h1>Lucratividade imediata e segurança financeira</h1>
+      <h1>O diagnóstico é claro</h1>
       <p>Seus resultados mostram que o foco da sua empresa agora deve ser um só: <b style="color:#fff">Lucratividade Imediata e Segurança Financeira</b>.</p>
       <p>A boa notícia? A solução para virar esse jogo é muito mais simples do que você imagina.</p>
       <div class="lp-present">Apresentamos<b>O Iluminismo Financeiro</b></div>
@@ -501,9 +518,7 @@ function iluView(){
 function mdlView(){
   return `<div class="step lp">
     <div class="lp-hero">
-      <span class="badge">${icon('rocket')} Mentoria Máquina de Lucros</span>
-      <p style="color:#bfe0ff;font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:13px;margin-bottom:10px">Seu diagnóstico revelou</p>
-      <h1>Um potencial explosivo de crescimento</h1>
+      <h1>Seu diagnóstico revelou um potencial explosivo!</h1>
       <p>Os números mostram que sua empresa tem grandes chances de <b style="color:#fff">crescer 75% no próximo ano</b> e dobrar o seu lucro atual nos próximos 12 meses.</p>
       <p>Como fazer isso acontecer? Com o método validado que já multiplicou os lucros de mais de <b style="color:#fff">15 mil empresários</b>.</p>
       <div class="lp-present">Apresentamos<b>Mentoria Máquina de Lucros (MDL)</b></div>
@@ -562,7 +577,7 @@ function resultsView(){
       <h3>Obrigado pelo seu interesse!</h3>
       <p>Recebemos sua solicitação e <b>nossa equipe vai entrar em contato em breve</b> para te ajudar a chegar no próximo nível. Enquanto isso, veja abaixo o seu diagnóstico completo.</p></div>`;
   } else if(S.resultMode==='declined'){
-    header = `<div class="ai-box"><div class="ai-tag">${icon('thumb')} Tudo certo</div>
+    header = `<div class="ai-box">
       <p>Sem problemas! Preparamos seu <b>diagnóstico completo</b> abaixo, com os pontos exatos onde sua empresa pode evoluir. Se mudar de ideia, é só falar com a gente.</p></div>`;
   }
 
@@ -571,7 +586,6 @@ function resultsView(){
     footer = `<a class="btn btn-wa btn-lg" href="${wa}" target="_blank" rel="noopener" data-track="whatsapp">${icon('whats')} Falar com a equipe pelo WhatsApp</a>`;
   } else {
     footer = `<div class="ai-box center" style="background:linear-gradient(135deg,#fff7e0,#ffffff);border-color:#f0c95a">
-        <div class="ai-tag" style="color:#a8780a">${icon('sparkles')} Recomendação para você</div>
         <h3 class="italic-h" style="font-size:22px;color:var(--dark);margin:0 0 8px">Quer resolver os problemas da sua empresa?</h3>
         <p style="color:#5a4a10;font-weight:600">Temos algo perfeito para você: um combo de cursos com tudo que você precisa para sair da situação atual.</p>
         <a class="btn btn-yellow btn-lg" href="${combo}" target="_blank" rel="noopener" data-track="combo" style="max-width:340px;margin:6px auto 0">${icon('rocket')} Quero a solução</a>
@@ -587,7 +601,6 @@ function resultsView(){
     </div>
 
     <div class="ai-box">
-      <div class="ai-tag">${icon('bulb')} O que você precisa melhorar</div>
       <p>${ins.focusMsg}</p>
       <p>${ins.strongMsg}</p>
       <ul class="ai-list">
@@ -633,7 +646,9 @@ function resultsView(){
     </div>
 
     <div class="card">
-      <div class="gauges">
+      <div class="center"><h2 class="title" style="font-size:clamp(18px,5vw,26px)">Os 3 resultados de uma Máquina de Lucros</h2>
+        <p class="sub">Toda empresa de sucesso entrega três coisas. Veja, pela sua avaliação inicial, o quanto a sua entrega hoje em cada uma (nota de 0 a 10).</p></div>
+      <div class="gauges" style="margin-top:18px">
         ${gaugeHTML('g1',S.answers['profit_crisis']||0,'Gera Lucro')}
         ${gaugeHTML('g2',S.answers['freedom']||0,'Gera Liberdade')}
         ${gaugeHTML('g3',S.answers['sales_growth']||0,'Cresce as Vendas')}
