@@ -232,9 +232,9 @@ function stepComplete(){
 }
 
 /* =================== NAVEGAÇÃO =================== */
-const top = () => window.scrollTo({top:0,behavior:'smooth'});
+const toTop = () => window.scrollTo({top:0,behavior:'smooth'});
 function next(){
-  top();
+  toTop();
   if(S.step==='setup') S.step='initial_eval';
   else if(S.step==='initial_eval') S.step='pillars';
   else if(S.step==='pillars'){
@@ -243,14 +243,14 @@ function next(){
   render();
 }
 function back(){
-  top();
+  toTop();
   if(S.step==='initial_eval') S.step='setup';
   else if(S.step==='pillars'){ if(S.pillarIdx>0) S.pillarIdx--; else S.step='initial_eval'; }
   else if(S.step==='lead_capture'){ S.step='pillars'; S.pillarIdx=PILLARS.length-1; }
   render();
 }
 function reset(){
-  top();
+  toTop();
   S.step='setup'; S.pillarIdx=0; S.answers={}; S.submitted=false; S.solution=null; S.resultMode='combo'; S.handraiseTag='';
   render();
 }
@@ -318,11 +318,11 @@ async function raiseHand(){
   if(window.fbq){ try{ fbq('trackCustom','LevantadaDeMao',{solucao:S.solution}); }catch(e){} }
   await sendToBackend({ action:'handraise', 'E-mail':S.lead.email, 'Nome':S.lead.name,
     'WhatsApp':S.lead.phone, 'Tag':tag, 'Solucao':S.solution });
-  S.resultMode='handraise'; S.step='results'; top(); render();
+  S.resultMode='handraise'; S.step='results'; toTop(); render();
 }
 function declineSolution(){
   dl('recusou_solucao', { solucao:S.solution });
-  S.resultMode='declined'; S.step='results'; top(); render();
+  S.resultMode='declined'; S.step='results'; toTop(); render();
 }
 
 /* =================== INPUTS =================== */
@@ -715,7 +715,7 @@ function bind(){
     if(a==='next') next();
     else if(a==='back') back();
     else if(a==='reset') reset();
-    else if(a==='see-solution'){ top(); S.step='solution'; render(); }
+    else if(a==='see-solution'){ toTop(); S.step='solution'; render(); }
     else if(a==='raise') raiseHand();
     else if(a==='decline') declineSolution();
   }));
@@ -759,4 +759,4 @@ function bind(){
   fbq('init',id); fbq('track','PageView');
 })();
 
-render();
+render()
