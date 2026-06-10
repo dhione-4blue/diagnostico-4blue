@@ -140,19 +140,7 @@ function calc(){
   // nunca usa margem 0 (evita zerar todos os custos se o tipo ficar em "select"/desconhecido)
   const idealMargin = (type && type.idealMargin > 0) ? type.idealMargin : 0.15;
 
-  const idealProfit = S.revenue * idealMargin;
-  const inefMonthly = Math.max(0, idealProfit - S.profit);
-
-  // CUSTO DE OPORTUNIDADE (corrigido):
-  // lucro potencial ao atingir o faturamento desejado (na margem ideal) menos o lucro atual,
-  // com piso no ganho vindo do crescimento de faturamento — assim nunca zera quando há meta de crescer.
-  const desiredProfit = S.desiredRevenue * idealMargin;
-  const growthUpside  = Math.max(0, S.desiredRevenue - S.revenue) * idealMargin;
-  let oppMonthly = Math.max(0, desiredProfit - S.profit);
-  if (oppMonthly < growthUpside) oppMonthly = growthUpside;
-  // piso na ineficiência: a oportunidade nunca é menor que o vazamento atual
-  if (oppMonthly < inefMonthly) oppMonthly = inefMonthly;
-
+  // --- Score de gestão (precisa vir ANTES dos custos) ---
   const pillarScores = PILLARS.map(p=>{
     const arr = p.questions.map(q=>S.answers[q.id]||0);
     const avg = arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -163,7 +151,26 @@ function calc(){
     return { name:p.name, score:(b?(S.answers[b.id]||0):0)*10 };
   });
   const totalPillar = pillarScores.reduce((a,c)=>a+c.score,0);
-  const mgmtPct = (totalPillar/(PILLARS.length*100))*100;
+  const mgmtPct = (totalPillar/(PILLARS.length*100))*100;   // 0-100
+
+  // --- CUSTO DA INEFICIÊNCIA ---
+  // Combina dois vazamentos e usa o MAIOR deles, então nunca zera para quem é mal gerido:
+  //  (a) gap de margem: lucro ideal (margem do segmento) menos o lucro atual informado;
+  //  (b) gap de gestão: parte do lucro ideal que se perde pela imaturidade da gestão
+  //      (quanto menor o score, maior a perda). Gestão 100% => sem perda por gestão.
+  const idealProfit = S.revenue * idealMargin;
+  const marginGap   = Math.max(0, idealProfit - S.profit);
+  const mgmtLeak    = idealProfit * (1 - mgmtPct/100);
+  const inefMonthly = Math.max(marginGap, mgmtLeak);
+
+  // --- CUSTO DE OPORTUNIDADE ---
+  // lucro potencial ao atingir o faturamento desejado (na margem ideal) menos o lucro atual,
+  // com piso no ganho de crescimento e nunca menor que a ineficiência atual.
+  const desiredProfit = S.desiredRevenue * idealMargin;
+  const growthUpside  = Math.max(0, S.desiredRevenue - S.revenue) * idealMargin;
+  let oppMonthly = Math.max(0, desiredProfit - S.profit);
+  if (oppMonthly < growthUpside) oppMonthly = growthUpside;
+  if (oppMonthly < inefMonthly) oppMonthly = inefMonthly;
 
   let lvl = 1;
   if(mgmtPct>=88.889) lvl=4; else if(mgmtPct>=72.223) lvl=3; else if(mgmtPct>=44.445) lvl=2;
