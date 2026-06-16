@@ -215,6 +215,31 @@ j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefo
   .overlay .ov-bar span{display:block;height:100%;width:40%;background:var(--yellow);border-radius:99px;animation:ovload 1.3s ease-in-out infinite}
   @keyframes ovload{0%{margin-left:-40%}100%{margin-left:100%}}
 
+  /* Botão vermelho (pular / recusar) */
+  .btn-red{background:#e23b3b;color:#fff;box-shadow:0 12px 24px -10px rgba(226,59,59,.5)}
+  .btn-red:active{transform:scale(.99)}
+
+  /* Tooltip "i" nos campos */
+  .info{position:relative;display:inline-flex;vertical-align:middle;margin-left:5px;color:var(--muted);cursor:pointer}
+  .info > svg{width:15px;height:15px}
+  .info-pop{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
+    width:min(230px,72vw);background:var(--ink);color:#fff;font-size:12px;font-weight:500;line-height:1.45;
+    text-transform:none;letter-spacing:0;padding:10px 12px;border-radius:10px;
+    box-shadow:0 14px 32px -10px rgba(0,0,0,.45);opacity:0;visibility:hidden;transition:.15s;z-index:70;pointer-events:none}
+  .info-pop::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--ink)}
+  .info:hover .info-pop,.info.open .info-pop{opacity:1;visibility:visible}
+
+  /* Tela de intro (landing inicial) */
+  .intro-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:24px;padding:8px 0 0}
+  .intro-h1{font-style:italic;font-weight:900;letter-spacing:-.03em;line-height:1.0;text-transform:uppercase;
+    color:var(--dark);font-size:clamp(25px,6.4vw,42px);margin:0}
+  .intro-imgwrap{width:100%;max-width:460px;border-radius:22px;overflow:hidden;background:#000;
+    box-shadow:0 26px 50px -24px rgba(0,40,90,.5)}
+  .intro-img{display:block;width:100%;height:auto}
+  .intro-p{color:#475569;font-weight:500;line-height:1.55;max-width:560px;margin:0;font-size:17px}
+  .intro-hero .btn{max-width:420px}
+
 </style>
 </head>
 <body>
