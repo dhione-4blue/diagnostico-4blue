@@ -97,7 +97,7 @@ const PILLARS = [
 ];
 
 const JOB_TITLES = ['Dono / Sócio','Gerente / Coordenador / Supervisor','Analista / Assistente','Estagiário / Estudante','Outro'];
-const REVENUE_RANGES = ['Até 30mil/mês','30 a 60mil/mês','60 a 100mil/mês','100 a 300mil/mês','300 a 500mil/mês','Acima de 500mil/mês','Nada / Não tenho empresa'];
+const REVENUE_RANGES = ['Até 30mil/mês','30 a 60mil/mês','60 a 100mil/mês','100 a 300mil/mês','300 a 500mil/mês','Acima de 500mil/mês','Não sei informar o faturamento'];
 
 const LEVELS = {
   1:{ name:'Fazenda de Problemas', color:'#ef4444', image:'assets/fazenda-problemas.png' },
@@ -396,7 +396,7 @@ function introView(){
   return `<div class="step">
     <div class="intro-hero">
       <h1 class="intro-h1">Você tem anos de empresa e já fatura bem.<br>E o que falta para finalmente crescer e ganhar mais dinheiro?</h1>
-      <div class="intro-imgwrap"><img class="intro-img" src="assets/intro-founders.png" alt="4blue" onerror="this.parentNode.style.display='none'" /></div>
+      <img class="intro-img" src="assets/intro-founders.png" alt="4blue" onerror="this.style.display='none'" />
       <p class="intro-p">Faça nosso diagnóstico e descubra, em apenas <b>5 minutos</b>, o que está impedindo sua empresa de crescer e o que você precisa fazer para sair dessa situação de forma rápida.</p>
       <button class="btn btn-primary btn-lg" data-act="start">Começar Diagnóstico ${icon('right')}</button>
     </div>
